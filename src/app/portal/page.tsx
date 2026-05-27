@@ -24,7 +24,7 @@ export default function PortalPage({ searchParams }: PageProps) {
       <div id="portal-container" className="w-full h-screen">
         {/* This is where the existing portal animation will be embedded */}
         <iframe
-          src="/portal/v14.6"
+          src="/portal/v14.6.html"
           className="w-full h-full border-0"
           title="PlebMoe Portal"
         />
