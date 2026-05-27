@@ -1,0 +1,201 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profile Information
+  firstName String?
+  lastName  String?
+  bitcoinExperienceLevel String? // 'beginner', 'intermediate', 'advanced'
+
+  // Referral Information
+  referralCode       String  @unique // Their unique referral code
+  referredByCode     String?
+  referredByUserId   String?
+  referredByUser     User?   @relation("UserReferrals", fields: [referredByUserId], references: [id])
+  referredUsers      User[]  @relation("UserReferrals")
+
+  // Status
+  emailVerified      Boolean @default(false)
+  isActive          Boolean @default(true)
+  subscriptionStatus String  @default("free")
+
+  // Attribution
+  sourceQrCode      String?
+  sourceInitiative  String?
+  sourcePerspective String? // 'mental', 'media', 'money'
+  sourceTopic       String?
+
+  // Engagement Tracking
+  totalSessionTime   Int      @default(0) // Total time spent in seconds
+  portalEntries     Int      @default(0) // How many times they've entered the portal
+  lastActive        DateTime @default(now())
+
+  // Relations
+  activityLogs      UserActivityLog[]
+  leads            Lead[]
+  createdQrCodes   QrAttribution[]   @relation("QrCreator")
+  assignedLeads    Lead[]            @relation("AssignedTo")
+  referralEvents   ReferralEvent[]   @relation("Referrer")
+  referredEvents   ReferralEvent[]   @relation("Referred")
+
+  @@map("users")
+}
+
+model BusinessInitiative {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  description    String?
+  primaryBalcony String? // 'mental', 'media', 'money'
+  websiteUrl     String?
+  contactEmail   String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  qrAttributions QrAttribution[]
+  leads         Lead[]
+
+  @@map("business_initiatives")
+}
+
+model QrAttribution {
+  id           String   @id @default(cuid())
+  qrCode       String   @unique
+  initiativeId String
+  initiative   BusinessInitiative @relation(fields: [initiativeId], references: [id])
+
+  // Attribution Details
+  campaignName String?
+  location     String?
+  createdByUserId String?
+  createdBy    User?   @relation("QrCreator", fields: [createdByUserId], references: [id])
+
+  // Tracking
+  scanCount       Int @default(0)
+  conversionCount Int @default(0)
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?
+
+  // Customization
+  portalStartPerspective String? @default("media") // 'mental', 'media', 'money'
+  portalStartTopic       String?
+  customLandingPage      String?
+
+  @@map("qr_attributions")
+}
+
+model UserActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  // Activity Details
+  activityType String // 'portal_entry', 'perspective_change', 'topic_view', 'stage_transition'
+  activityData Json?  // Flexible data storage for activity-specific information
+
+  // Context
+  perspective String? // 'mental', 'media', 'money'
+  topic       String?
+  stage       Int?
+
+  // Attribution
+  sourceQrCode     String?
+  sourceInitiative String?
+
+  // Technical
+  userAgent    String?
+  ipAddress    String?
+  referrerUrl  String?
+
+  // Timing
+  sessionDuration Int?     // Duration of this activity in seconds
+  timestamp       DateTime @default(now())
+
+  @@map("user_activity_logs")
+}
+
+model Lead {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Lead Classification
+  leadStatus String @default("new") // 'new', 'contacted', 'qualified', 'converted', 'lost'
+  leadScore  Int    @default(0)     // 0-100 based on engagement
+  leadSource String?
+
+  // Business Initiative Interest
+  primaryInterest      String?
+  interestInitiatives  Json? // Array of all initiatives they've shown interest in
+  initiativeId         String?
+  initiative          BusinessInitiative? @relation(fields: [initiativeId], references: [id])
+
+  // Engagement Metrics
+  totalPortalTime    Int @default(0)
+  topicsExplored     Int @default(0)
+  referralsGenerated Int @default(0)
+
+  // Contact Information
+  preferredContactMethod String @default("email")
+  phoneNumber           String?
+  notes                 String?
+
+  // Pipeline Tracking
+  assignedToUserId   String?
+  assignedTo        User?     @relation("AssignedTo", fields: [assignedToUserId], references: [id])
+  nextFollowupDate  DateTime?
+  lastContactDate   DateTime?
+
+  // Attribution
+  originalQrCode     String?
+  originalInitiative String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leads")
+}
+
+model ReferralEvent {
+  id              String @id @default(cuid())
+  referrerUserId  String
+  referredUserId  String
+  referrer        User   @relation("Referrer", fields: [referrerUserId], references: [id], onDelete: Cascade)
+  referred        User   @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  // Attribution Chain
+  qrCodeUsed      String?
+  initiativeSource String?
+  referralMethod  String? // 'qr_scan', 'direct_link', 'social_share'
+
+  // Conversion Tracking
+  referralStatus String?   @default("pending") // 'pending', 'converted', 'expired'
+  convertedAt    DateTime?
+
+  // Rewards/Incentives
+  rewardEligible Boolean @default(true)
+  rewardAmount   Decimal? @db.Decimal(10, 2)
+  rewardCurrency String? @default("USD")
+  rewardPaid     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@map("referral_events")
+}

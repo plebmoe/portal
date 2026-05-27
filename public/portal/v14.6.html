@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bitcoin Portal v14.6 - Mobile Optimized Content Cards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        body.dragging {
+            cursor: grabbing;
+        }
+
+        /* TORUS ANIMATION LAYER */
+        #torus-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* CONTENT OVERLAY */
+        .content-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* ENTER BUTTON - Top third on all devices */
+        .desktop-enter-portal {
+            position: fixed;
+            top: 33vh;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            text-align: center;
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        .desktop-enter-portal.show {
+            opacity: 1;
+        }
+
+        .enter-portal-btn {
+            background: linear-gradient(135deg, #00ff00, #32ff32);
+            border: none;
+            color: #000;
+            padding: 20px 40px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 255, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .enter-portal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 0, 0.4);
+            animation: none;
+        }
+
+        .enter-portal-btn:active {
+            transform: translateY(0);
+        }
+
+        /* SUB-STAGE NAVIGATION - With 1s delay after portal entry */
+        .desktop-substage-nav {
+            opacity: 0;
+            transition: opacity 1s ease;
+            pointer-events: none;
+        }
+
+        .desktop-substage-nav.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .desktop-substage-nav.delayed-show {
+            animation: fadeIn 1s ease forwards;
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Navigation buttons with improved mobile touch targets */
+        .nav-btn {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 14px 20px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 200;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn.left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .nav-btn.right {
+            top: 20px;
+            right: 20px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Visual feedback for navigation direction */
+        .nav-btn .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-btn:hover .arrow.left {
+            transform: translateX(-3px);
+        }
+
+        .nav-btn:hover .arrow.right {
+            transform: translateX(3px);
+        }
+
+        /* Topic Navigation Container (Bottom) */
+        .topic-nav {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 20px;
+            z-index: 190;
+            pointer-events: none;
+        }
+
+        .topic-nav.show {
+            display: flex;
+        }
+
+        /* Topic Title */
+        .topic-title {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 12px 20px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            min-width: 180px;
+            max-width: 250px;
+        }
+
+        /* Topic navigation arrows */
+        .topic-arrow {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+
+        .topic-arrow:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .topic-arrow:active {
+            transform: scale(0.95);
+        }
+
+        /* Current Stage Bar */
+        .stage-status-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            border-top: 2px solid #ff8c00;
+            padding: 15px;
+            text-align: center;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+
+        .stage-status-line1 {
+            color: #888;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+
+        .stage-status-line2 {
+            color: #ff8c00;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* Section Title - Hidden */
+        .section-title {
+            display: none;
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* Bottom buttons container - AT THE VERY BOTTOM */
+        .bottom-buttons {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+            z-index: 200;
+        }
+
+        .back-btn, .deeper-btn, .signup-btn {
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: none;
+            min-width: 100px;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #666, #444);
+            color: #fff;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(100, 100, 100, 0.4);
+        }
+
+        .deeper-btn {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: #fff;
+        }
+
+        .deeper-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+        }
+
+        .deeper-btn:active, .back-btn:active {
+            transform: translateY(0);
+        }
+
+        .signup-btn {
+            background: linear-gradient(135deg, #32ff32, #00c800);
+            color: #000;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(50, 255, 50, 0.4);
+        }
+
+        .signup-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .topic-nav {
+                bottom: 120px;
+                gap: 12px;
+            }
+
+            .topic-title {
+                font-size: 14px;
+                letter-spacing: 1px;
+                padding: 10px 16px;
+                min-width: 160px;
+                max-width: 200px;
+            }
+
+            .topic-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+            }
+
+            .nav-btn {
+                padding: 12px 18px;
+                font-size: 14px;
+            }
+
+            .nav-btn.left {
+                left: 10px;
+                top: 10px;
+            }
+
+            .nav-btn.right {
+                right: 10px;
+                top: 10px;
+            }
+
+            .deeper-btn, .signup-btn, .back-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+                min-width: 80px;
+            }
+
+            .bottom-buttons {
+                gap: 10px;
+                bottom: 8px;
+            }
+
+            .enter-portal-btn {
+                padding: 16px 32px;
+                font-size: 16px;
+            }
+
+            .single-topic-card {
+                width: 300px;
+                max-width: 90vw;
+                padding: 16px;
+                top: 80px;
+            }
+        }
+
+        /* STAGE TITLE */
+        .stage-title {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            text-align: center;
+            pointer-events: none;
+            display: none;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .stage-title.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .stage-title h2 {
+            color: #ff8c00;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(255, 140, 0, 0.6);
+            margin-bottom: 8px;
+        }
+
+        .stage-title p {
+            color: #ffffff;
+            font-size: 14px;
+            max-width: 280px;
+            line-height: 1.4;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            .stage-title {
+                top: 50px;
+            }
+            .stage-title h2 {
+                font-size: 20px;
+                letter-spacing: 2px;
+            }
+            .stage-title p {
+                font-size: 13px;
+                max-width: 260px;
+            }
+        }
+
+        /* COMPACT CONTENT CARDS */
+        .floating-content {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 150;
+            display: none;
+        }
+
+        .floating-content.show {
+            display: block;
+        }
+
+        .content-cards-container {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: auto;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 90vw;
+        }
+
+        .compact-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 140, 0, 0.4);
+            border-radius: 12px;
+            padding: 16px;
+            width: 150px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardSlideUp 0.6s ease forwards;
+        }
+
+        .compact-card:hover {
+            border-color: rgba(255, 140, 0, 0.7);
+            background: rgba(0, 0, 0, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 140, 0, 0.2);
+        }
+
+        .compact-card h4 {
+            color: #ff8c00;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .compact-card p {
+            color: #ffffff;
+            font-size: 12px;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes cardSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-cards-container {
+                bottom: 100px;
+                gap: 10px;
+            }
+            .compact-card {
+                width: 140px;
+                padding: 14px;
+            }
+            .compact-card h4 {
+                font-size: 13px;
+            }
+            .compact-card p {
+                font-size: 11px;
+            }
+        }
+
+        /* SINGLE TOPIC CARD (for stage 1) */
+        .single-topic-card {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 140, 0, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            width: 340px;
+            max-width: 85vw;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+            text-align: center;
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+            animation: topicCardAppear 0.5s ease forwards;
+            transition: all 0.3s ease;
+        }
+
+        .single-topic-card:hover {
+            border-color: rgba(255, 140, 0, 0.6);
+            background: rgba(0, 0, 0, 0.4);
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @keyframes topicCardAppear {
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .single-topic-card h3 {
+            color: #ff8c00;
+            font-size: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+        }
+
+        .single-topic-card p {
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.6;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+
+        /* Debug panel */
+        .debug-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ff8c00;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: #ff8c00;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 250;
+            display: none;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .debug-panel.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Torus Canvas Container -->
+    <div id="torus-canvas"></div>
+
+    <!-- Content Overlay -->
+    <div class="content-overlay">
+        <!-- Enter Portal Button -->
+        <div class="desktop-enter-portal" id="enterPortalDiv">
+            <button id="enterPortalBtn" class="enter-portal-btn interactive">ENTER</button>
+        </div>
+
+        <!-- Sub-stage Navigation (Top) -->
+        <nav class="desktop-substage-nav" id="subStageNav" style="display: none;">
+            <!-- Left Navigation Button -->
+            <button id="navLeft" class="nav-btn left interactive">
+                <span class="arrow left">←</span> <span id="leftLabel">Mental</span>
+            </button>
+
+            <!-- Right Navigation Button -->
+            <button id="navRight" class="nav-btn right interactive">
+                <span id="rightLabel">Money</span> <span class="arrow right">→</span>
+            </button>
+        </nav>
+
+        <!-- Topic Navigation (Bottom) -->
+        <div class="topic-nav" id="topicNav">
+            <button id="topicLeft" class="topic-arrow interactive">
+                ←
+            </button>
+
+            <div id="topicTitle" class="topic-title">
+                SIGNAL VS NOISE
+            </div>
+
+            <button id="topicRight" class="topic-arrow interactive">
+                →
+            </button>
+        </div>
+
+        <!-- Bottom Navigation Buttons -->
+        <div id="bottomButtons" class="bottom-buttons" style="display: none;">
+            <button id="backBtn" class="back-btn interactive">Back</button>
+            <button id="deeperBtn" class="deeper-btn interactive">Deeper</button>
+            <button id="signupBtn" class="signup-btn interactive">Sign Up</button>
+        </div>
+
+        <!-- Debug Panel -->
+        <div id="debugPanel" class="debug-panel">
+            <div id="debugInfo">Stage: APPROACH</div>
+        </div>
+    </div>
+
+    <!-- Single Topic Card for Current Topic -->
+    <!-- Stage Title -->
+    <div id="stageTitle" class="stage-title">
+        <h2 id="stageTitleText"></h2>
+        <p id="stageDescription"></p>
+    </div>
+
+    <!-- Content Cards -->
+    <div id="floatingContent" class="floating-content">
+        <div id="singleCard" class="single-topic-card"></div>
+        <div id="compactCards" class="content-cards-container"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="sketch_cinematic_torus_v14.5.js"></script>
+    <script>
+        // State management
+        let portalEntered = false;
+        let currentStage = 0; // Start at Overview (loading stage)
+        let currentPerspective = 'media';
+        let currentTopicIndex = 0; // Current topic within perspective
+        let showDebug = false;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🎭 Portal interface initialized');
+            initializeInterface();
+            setupEventListeners();
+            
+            // Show enter button after 3-5 seconds
+            setTimeout(() => {
+                const enterDiv = document.getElementById('enterPortalDiv');
+                if (enterDiv && !portalEntered) {
+                    enterDiv.classList.add('show');
+                    console.log('✨ Enter button revealed');
+                }
+            }, 4000);
+        });
+
+        function initializeInterface() {
+            // Set initial state
+            updateInterface();
+            updateNavigationVisibility();
+        }
+
+        function setupEventListeners() {
+            // Enter Portal
+            const enterBtn = document.getElementById('enterPortalBtn');
+            if (enterBtn) {
+                enterBtn.addEventListener('click', enterPortal);
+            }
+
+            // Perspective navigation buttons (top)
+            const navLeft = document.getElementById('navLeft');
+            const navRight = document.getElementById('navRight');
+            if (navLeft) navLeft.addEventListener('click', () => navigateToPerspective('left'));
+            if (navRight) navRight.addEventListener('click', () => navigateToPerspective('right'));
+
+            // Topic navigation buttons (bottom)
+            const topicLeft = document.getElementById('topicLeft');
+            const topicRight = document.getElementById('topicRight');
+            if (topicLeft) topicLeft.addEventListener('click', () => navigateToTopic('left'));
+            if (topicRight) topicRight.addEventListener('click', () => navigateToTopic('right'));
+
+            // Bottom buttons
+            const backBtn = document.getElementById('backBtn');
+            const deeperBtn = document.getElementById('deeperBtn');
+            const signupBtn = document.getElementById('signupBtn');
+            
+            if (backBtn) backBtn.addEventListener('click', goBack);
+            if (deeperBtn) deeperBtn.addEventListener('click', goDeeper);
+            if (signupBtn) signupBtn.addEventListener('click', openSignup);
+
+            // Debug toggle
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'd') {
+                    toggleDebug();
+                }
+            });
+        }
+
+        function enterPortal() {
+            portalEntered = true;
+
+            // Hide enter button
+            const enterDiv = document.getElementById('enterPortalDiv');
+            if (enterDiv) {
+                enterDiv.classList.remove('show');
+                enterDiv.style.display = 'none';
+            }
+
+            // Set to Approach stage (1) with media substage
+            if (typeof cinematicController !== 'undefined') {
+                cinematicController.setStage(1, 'media');
+            }
+
+            // Show navigation after 1 second
+            setTimeout(() => {
+                const subStageNav = document.getElementById('subStageNav');
+                if (subStageNav) {
+                    subStageNav.style.display = 'block';
+                    setTimeout(() => subStageNav.classList.add('show'), 50);
+                }
+
+                const topicNav = document.getElementById('topicNav');
+                if (topicNav) {
+                    topicNav.classList.add('show');
+                }
+
+                const bottomButtons = document.getElementById('bottomButtons');
+                if (bottomButtons) {
+                    bottomButtons.style.display = 'flex';
+                }
+
+                // Auto-show content on Approach stage after UI loads
+                setTimeout(() => {
+                    showCurrentTopic();
+                }, 500);
+            }, 1000);
+
+            updateInterface();
+            updateNavigationVisibility();
+            console.log('🎬 Entered portal at Media perspective');
+        }
+
+        function navigateToPerspective(direction) {
+            const perspectives = ['mental', 'media', 'money'];
+            let currentIndex = perspectives.indexOf(currentPerspective);
+
+            if (direction === 'left') {
+                currentIndex = (currentIndex - 1 + 3) % 3;
+            } else {
+                currentIndex = (currentIndex + 1) % 3;
+            }
+
+            currentPerspective = perspectives[currentIndex];
+
+            // Rotate to the new perspective (only works on Approach stage)
+            if (typeof cinematicController !== 'undefined') {
+                cinematicController.cameraController.setSubStage(currentPerspective);
+            }
+
+            currentTopicIndex = 0; // Reset to first topic in new perspective
+            updateButtonLabels();
+            updateTopicTitle();
+            console.log(`🎬 Navigated to: ${currentPerspective}`);
+
+            // If floating content is visible, update it with new perspective
+            const floatingDiv = document.getElementById('floatingContent');
+            if (floatingDiv && floatingDiv.classList.contains('show')) {
+                // Brief delay for transition to complete
+                setTimeout(() => {
+                    showCurrentTopic();
+                }, 300);
+            }
+        }
+
+        function updateButtonLabels() {
+            const perspectives = ['mental', 'media', 'money'];
+            const labels = {
+                'mental': 'Mental',
+                'media': 'Media',
+                'money': 'Money'
+            };
+
+            let currentIndex = perspectives.indexOf(currentPerspective);
+
+            // Calculate left and right perspectives
+            const leftIndex = (currentIndex - 1 + 3) % 3;
+            const rightIndex = (currentIndex + 1) % 3;
+
+            const leftPerspective = perspectives[leftIndex];
+            const rightPerspective = perspectives[rightIndex];
+
+            // Update button labels
+            const leftLabel = document.getElementById('leftLabel');
+            const rightLabel = document.getElementById('rightLabel');
+
+            if (leftLabel) leftLabel.textContent = labels[leftPerspective];
+            if (rightLabel) rightLabel.textContent = labels[rightPerspective];
+        }
+
+        function updateTopicTitle() {
+            const topics = getTopicsForPerspective(currentPerspective);
+            const currentTopic = topics[currentTopicIndex];
+
+            const topicTitle = document.getElementById('topicTitle');
+            if (topicTitle && currentTopic) {
+                topicTitle.textContent = currentTopic.name.toUpperCase();
+            }
+        }
+
+        function goBack() {
+            // Hide floating content when navigating away
+            closeFloatingContent();
+
+            if (currentStage > 0) {
+                currentStage--;
+                if (typeof cinematicController !== 'undefined') {
+                    cinematicController.setStage(currentStage);
+                }
+                updateInterface();
+                updateNavigationVisibility();
+                console.log(`📍 Going back to stage ${currentStage}`);
+
+                // If back to Overview (stage 0), reset portal state and show enter button
+                if (currentStage === 0) {
+                    portalEntered = false;
+                    const enterDiv = document.getElementById('enterPortalDiv');
+                    if (enterDiv) {
+                        enterDiv.style.display = 'block';
+                        setTimeout(() => {
+                            enterDiv.classList.add('show');
+                        }, 100);
+                    }
+                }
+
+                // If back to Approach (stage 1), show content again
+                if (currentStage === 1 && portalEntered) {
+                    setTimeout(() => {
+                        showCurrentTopic();
+                    }, 1000);
+                }
+            }
+        }
+
+        function goDeeper() {
+            // Hide floating content when leaving any stage
+            closeFloatingContent();
+
+            // Always advance to next stage
+            if (currentStage < 8) {
+                currentStage++;
+                if (typeof cinematicController !== 'undefined') {
+                    cinematicController.setStage(currentStage);
+                }
+                updateInterface();
+                updateNavigationVisibility();
+                console.log(`📍 Going deeper to stage ${currentStage}`);
+            }
+        }
+
+        function getTopicsForPerspective(perspective) {
+            const topicsData = {
+                'money': [
+                    { name: '21 Million Cap', desc: 'Absolute scarcity creates unprecedented store of value' },
+                    { name: 'Self Custody', desc: 'Be your own bank without trusted intermediaries' },
+                    { name: 'Proof of Work', desc: 'Energy expenditure creates unforgeable digital gold' }
+                ],
+                'mental': [
+                    { name: 'Sovereignty', desc: 'Take control of your financial and personal destiny' },
+                    { name: 'Low Time Preference', desc: 'Build wealth by thinking long-term' },
+                    { name: 'Personal Responsibility', desc: 'No bailouts, only individual accountability' }
+                ],
+                'media': [
+                    { name: 'Signal vs Noise', desc: 'Cut through FUD to find valuable information' },
+                    { name: 'Verify Don\'t Trust', desc: 'Code is law. Open source reveals truth' },
+                    { name: 'Narrative Independence', desc: 'Think critically beyond mainstream media' }
+                ]
+            };
+
+            return topicsData[perspective] || topicsData['media'];
+        }
+
+        function getStageContent(stage) {
+            const stageData = {
+                2: {
+                    title: 'Orbit',
+                    description: 'Multiple perspectives revealing universal truths',
+                    cards: [
+                        {
+                            name: 'Systematic Thinking',
+                            desc: 'Methodical approaches vs random attempts',
+                            link: '#systematic-thinking'
+                        },
+                        {
+                            name: 'Universal Principles',
+                            desc: 'Core truths across domains',
+                            link: '#universal-principles'
+                        }
+                    ]
+                },
+                3: {
+                    title: 'Dive',
+                    description: 'Earn as you learn through decentralized cooperation',
+                    cards: [
+                        {
+                            name: 'PlebMoe Platform',
+                            desc: 'Earn Bitcoin through skills',
+                            link: 'https://plebmoe.com'
+                        },
+                        {
+                            name: 'Provider Dashboard',
+                            desc: 'Build local circular economy',
+                            link: 'https://plebmoe.com/providers'
+                        }
+                    ]
+                },
+                4: {
+                    title: 'AI',
+                    description: 'Proof-of-work through intelligent community platforms',
+                    cards: [
+                        {
+                            name: 'Proof Of Putt',
+                            desc: 'AI golf competition & ranking',
+                            link: 'https://plebmoe.com/proof-of-putt'
+                        },
+                        {
+                            name: 'Penn Quarter Rules',
+                            desc: 'AI-moderated debates',
+                            link: 'https://pennquarterrules.com'
+                        }
+                    ]
+                },
+                5: {
+                    title: 'Lifestyle',
+                    description: 'Premium assets for wealth preservation & wellness',
+                    cards: [
+                        {
+                            name: 'Hot Tubs & Spas',
+                            desc: 'Therapeutic wellness infrastructure',
+                            link: '#hot-tubs-spas'
+                        },
+                        {
+                            name: 'Saunas & Billiards',
+                            desc: 'Daily wellness & family recreation',
+                            link: '#saunas-billiards'
+                        }
+                    ]
+                },
+                6: {
+                    title: 'Energy',
+                    description: 'Independence through solar & agricultural sovereignty',
+                    cards: [
+                        {
+                            name: 'Solar Strive',
+                            desc: 'Energy sovereignty solutions',
+                            link: 'https://plebmoe.com/solar-strive'
+                        },
+                        {
+                            name: 'Off-Grid Experiences',
+                            desc: 'Food sovereignty farmstays',
+                            link: '#off-grid-farmstays'
+                        }
+                    ]
+                },
+                7: {
+                    title: 'Wealth',
+                    description: 'Bitcoin-focused financial strategy & planning',
+                    cards: [
+                        {
+                            name: 'Financial Advisor',
+                            desc: 'Bitcoin allocation & custody',
+                            link: '#bitcoin-financial-advisor'
+                        },
+                        {
+                            name: 'Wealth Planning',
+                            desc: 'Sound money strategies',
+                            link: '#wealth-preservation'
+                        }
+                    ]
+                },
+                8: {
+                    title: 'Community',
+                    description: 'Local events & networking opportunities',
+                    cards: [
+                        {
+                            name: 'Events',
+                            desc: 'Local meetups & workshops',
+                            link: '#upcoming-events'
+                        },
+                        {
+                            name: 'Debates',
+                            desc: 'Intellectual discourse events',
+                            link: 'https://pennquarterrules.com/events'
+                        }
+                    ]
+                }
+            };
+
+            return stageData[stage] || null;
+        }
+
+        function showStageContent(stage) {
+            const stageContent = getStageContent(stage);
+            if (!stageContent) return;
+
+            // Show stage title
+            const stageTitle = document.getElementById('stageTitle');
+            const stageTitleText = document.getElementById('stageTitleText');
+            const stageDescription = document.getElementById('stageDescription');
+
+            if (stageTitle && stageTitleText && stageDescription) {
+                stageTitleText.textContent = stageContent.title;
+                stageDescription.textContent = stageContent.description;
+                stageTitle.classList.add('show');
+            }
+
+            // Show compact cards
+            const floatingDiv = document.getElementById('floatingContent');
+            const singleCard = document.getElementById('singleCard');
+            const compactCards = document.getElementById('compactCards');
+
+            // Hide single card, show compact cards
+            singleCard.style.display = 'none';
+
+            // Generate compact cards HTML
+            if (compactCards) {
+                compactCards.innerHTML = stageContent.cards.map((card, index) => `
+                    <div class="compact-card" style="animation-delay: ${index * 0.1}s" onclick="window.open('${card.link}', '_blank')">
+                        <h4>${card.name}</h4>
+                        <p>${card.desc}</p>
+                    </div>
+                `).join('');
+            }
+
+            floatingDiv.classList.add('show');
+            console.log(`📄 Showing compact content for stage ${stage}: ${stageContent.title}`);
+        }
+
+        function showCurrentTopic() {
+            const topics = getTopicsForPerspective(currentPerspective);
+            const currentTopic = topics[currentTopicIndex];
+
+            // Hide stage title for stage 1
+            const stageTitle = document.getElementById('stageTitle');
+            if (stageTitle) {
+                stageTitle.classList.remove('show');
+            }
+
+            const floatingDiv = document.getElementById('floatingContent');
+            const singleCard = document.getElementById('singleCard');
+            const compactCards = document.getElementById('compactCards');
+
+            // Show single card, hide compact cards for stage 1
+            if (singleCard) singleCard.style.display = 'block';
+            if (compactCards) compactCards.innerHTML = '';
+
+            if (floatingDiv && singleCard && currentTopic) {
+                singleCard.innerHTML = `
+                    <h3>${currentTopic.name}</h3>
+                    <p>${currentTopic.desc}</p>
+                `;
+
+                floatingDiv.classList.add('show');
+                updateTopicTitle();
+                console.log(`💡 Showing topic: ${currentTopic.name} (${currentPerspective})`);
+            }
+        }
+
+        function navigateToTopic(direction) {
+            const topics = getTopicsForPerspective(currentPerspective);
+
+            if (direction === 'left') {
+                currentTopicIndex = (currentTopicIndex - 1 + topics.length) % topics.length;
+            } else {
+                currentTopicIndex = (currentTopicIndex + 1) % topics.length;
+            }
+
+            updateTopicTitle();
+
+            // If content is visible, update it
+            const floatingDiv = document.getElementById('floatingContent');
+            if (floatingDiv && floatingDiv.classList.contains('show')) {
+                showCurrentTopic();
+            }
+
+            console.log(`📍 Topic navigation: ${getTopicsForPerspective(currentPerspective)[currentTopicIndex].name}`);
+        }
+
+        function closeFloatingContent() {
+            const floatingDiv = document.getElementById('floatingContent');
+            if (floatingDiv) {
+                floatingDiv.classList.remove('show');
+            }
+
+            // Also hide stage title
+            const stageTitle = document.getElementById('stageTitle');
+            if (stageTitle) {
+                stageTitle.classList.remove('show');
+            }
+        }
+
+        function openSignup() {
+            console.log('📝 Opening signup modal');
+
+            // Get current portal context
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrCode = urlParams.get('qr');
+            const initiative = urlParams.get('initiative');
+
+            // Try to use parent window's auth system if available
+            if (window.parent && window.parent.portalAuth) {
+                window.parent.portalAuth.openSignup();
+            } else {
+                // Fallback: redirect to signup page with context
+                const signupUrl = new URL('/portal', window.location.origin);
+                signupUrl.searchParams.set('action', 'signup');
+                signupUrl.searchParams.set('perspective', currentPerspective);
+
+                const currentTopic = getTopicsForPerspective(currentPerspective)[currentTopicIndex];
+                if (currentTopic) {
+                    signupUrl.searchParams.set('topic', currentTopic.name);
+                }
+
+                if (qrCode) signupUrl.searchParams.set('qr', qrCode);
+                if (initiative) signupUrl.searchParams.set('initiative', initiative);
+
+                window.parent.location.href = signupUrl.toString();
+            }
+        }
+
+        function updateInterface() {
+            const stages = ['Overview', 'Approach', 'Orbit', 'Dive', 'AI', 'Lifestyle', 'Energy', 'Wealth', 'Community'];
+            const stageName = stages[currentStage] || 'Unknown';
+            
+            if (showDebug) {
+                const debugInfo = document.getElementById('debugInfo');
+                if (debugInfo) {
+                    let info = `Stage: ${stageName} (${currentStage})`;
+                    if (currentStage === 1 && portalEntered) {
+                        info += ` - ${currentPerspective.toUpperCase()}`;
+                    }
+                    debugInfo.textContent = info;
+                }
+            }
+        }
+
+        function updateNavigationVisibility() {
+            const subStageNav = document.getElementById('subStageNav');
+            const topicNav = document.getElementById('topicNav');
+            const bottomButtons = document.getElementById('bottomButtons');
+            const floatingContent = document.getElementById('floatingContent');
+
+            // Show content for stages 1-8 after portal entry
+            if (currentStage >= 1 && currentStage <= 8 && portalEntered) {
+                if (currentStage === 1) {
+                    // Stage 1: Show perspective navigation and topic content
+                    if (subStageNav) subStageNav.style.display = 'block';
+                    if (topicNav) topicNav.classList.add('show');
+                    showCurrentTopic();
+                } else {
+                    // Stages 2-6: Show stage-specific content cards
+                    if (subStageNav) subStageNav.style.display = 'none';
+                    if (topicNav) topicNav.classList.remove('show');
+                    showStageContent(currentStage);
+                }
+
+                if (bottomButtons) bottomButtons.style.display = 'flex';
+            } else {
+                // Stage 0 or beyond: Hide all content
+                if (subStageNav) subStageNav.style.display = 'none';
+                if (topicNav) topicNav.classList.remove('show');
+                if (floatingContent) floatingContent.classList.remove('show');
+
+                // Hide stage title when not in content stages
+                const stageTitle = document.getElementById('stageTitle');
+                if (stageTitle) stageTitle.classList.remove('show');
+
+                // Always hide bottom buttons on stage 0 (loading stage)
+                if (bottomButtons) {
+                    bottomButtons.style.display = currentStage === 0 ? 'none' : 'flex';
+                }
+            }
+        }
+
+        function toggleDebug() {
+            showDebug = !showDebug;
+            const debugPanel = document.getElementById('debugPanel');
+            if (debugPanel) {
+                debugPanel.classList.toggle('show', showDebug);
+            }
+            console.log(`🐛 Debug mode: ${showDebug ? 'ON' : 'OFF'}`);
+        }
+
+        // Listen for stage changes from the animation
+        window.addEventListener('stageChanged', (e) => {
+            if (e.detail && typeof e.detail.stage === 'number') {
+                currentStage = e.detail.stage;
+                updateInterface();
+                updateNavigationVisibility();
+            }
+        });
+    </script>
+</body>
+</html>
