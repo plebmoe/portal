@@ -1,30 +1,36 @@
 import PortalIntegration from '@/components/PortalIntegration'
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     perspective?: string
     topic?: string
     qr?: string
     initiative?: string
-  }
+  }>
 }
 
-export default function PortalPage({ searchParams }: PageProps) {
+export default async function PortalPage({ searchParams }: PageProps) {
+  const params = await searchParams
   return (
     <div className="min-h-screen bg-black">
       {/* Portal Integration Component */}
       <PortalIntegration
-        sourcePerspective={searchParams.perspective}
-        sourceTopic={searchParams.topic}
-        sourceQrCode={searchParams.qr}
-        sourceInitiative={searchParams.initiative}
+        sourcePerspective={params.perspective}
+        sourceTopic={params.topic}
+        sourceQrCode={params.qr}
+        sourceInitiative={params.initiative}
       />
 
       {/* Portal Animation Container */}
       <div id="portal-container" className="w-full h-screen">
         {/* This is where the existing portal animation will be embedded */}
         <iframe
-          src="/portal/v14.6.html"
+          src={`/portal/v14.6.html?${new URLSearchParams({
+            ...(params.perspective && { perspective: params.perspective }),
+            ...(params.topic && { topic: params.topic }),
+            ...(params.qr && { qr: params.qr }),
+            ...(params.initiative && { initiative: params.initiative })
+          }).toString()}`}
           className="w-full h-full border-0"
           title="PlebMoe Portal"
         />
