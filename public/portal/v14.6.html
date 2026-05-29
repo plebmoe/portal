@@ -292,7 +292,7 @@
             z-index: 200;
         }
 
-        .back-btn, .deeper-btn, .signup-btn {
+        .back-btn, .deeper-btn, .login-btn, .signup-btn {
             padding: 12px 20px;
             border-radius: 14px;
             font-weight: bold;
@@ -325,6 +325,20 @@
         }
 
         .deeper-btn:active, .back-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .login-btn:active {
             transform: translateY(0);
         }
 
@@ -378,7 +392,7 @@
                 top: 10px;
             }
 
-            .deeper-btn, .signup-btn, .back-btn {
+            .deeper-btn, .signup-btn, .back-btn, .login-btn {
                 padding: 10px 16px;
                 font-size: 14px;
                 min-width: 80px;
@@ -665,6 +679,7 @@
         <div id="bottomButtons" class="bottom-buttons" style="display: none;">
             <button id="backBtn" class="back-btn interactive">Back</button>
             <button id="deeperBtn" class="deeper-btn interactive">Deeper</button>
+            <button id="loginBtn" class="login-btn interactive">Login</button>
             <button id="signupBtn" class="signup-btn interactive">Sign Up</button>
         </div>
 
@@ -742,10 +757,12 @@
             // Bottom buttons
             const backBtn = document.getElementById('backBtn');
             const deeperBtn = document.getElementById('deeperBtn');
+            const loginBtn = document.getElementById('loginBtn');
             const signupBtn = document.getElementById('signupBtn');
-            
+
             if (backBtn) backBtn.addEventListener('click', goBack);
             if (deeperBtn) deeperBtn.addEventListener('click', goDeeper);
+            if (loginBtn) loginBtn.addEventListener('click', openLogin);
             if (signupBtn) signupBtn.addEventListener('click', openSignup);
 
             // Debug toggle
@@ -1158,6 +1175,35 @@
             }
         }
 
+        function openLogin() {
+            console.log('🔐 Opening login modal');
+
+            // Get current portal context
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrCode = urlParams.get('qr');
+            const initiative = urlParams.get('initiative');
+
+            // Try to use parent window's auth system if available
+            if (window.parent && window.parent.portalAuth) {
+                window.parent.portalAuth.openLogin();
+            } else {
+                // Fallback: redirect to login page with context
+                const loginUrl = new URL('/portal', window.location.origin);
+                loginUrl.searchParams.set('action', 'login');
+                loginUrl.searchParams.set('perspective', currentPerspective);
+
+                const currentTopic = getTopicsForPerspective(currentPerspective)[currentTopicIndex];
+                if (currentTopic) {
+                    loginUrl.searchParams.set('topic', currentTopic.name);
+                }
+
+                if (qrCode) loginUrl.searchParams.set('qr', qrCode);
+                if (initiative) loginUrl.searchParams.set('initiative', initiative);
+
+                window.parent.location.href = loginUrl.toString();
+            }
+        }
+
         function openSignup() {
             console.log('📝 Opening signup modal');
 
@@ -1217,10 +1263,13 @@
                     if (topicNav) topicNav.classList.add('show');
                     showCurrentTopic();
                 } else {
-                    // Stages 2-6: Show stage-specific content cards
+                    // Stages 2-8: Show stage-specific content cards
                     if (subStageNav) subStageNav.style.display = 'none';
                     if (topicNav) topicNav.classList.remove('show');
-                    showStageContent(currentStage);
+                    // Add delay to allow cinematic transition to complete before showing content
+                    setTimeout(() => {
+                        showStageContent(currentStage);
+                    }, 1500);
                 }
 
                 if (bottomButtons) bottomButtons.style.display = 'flex';
