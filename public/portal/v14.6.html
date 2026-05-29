@@ -919,18 +919,30 @@
         }
 
         function goDeeper() {
+            console.log(`📍 Going deeper from stage ${currentStage}`);
+
             // Hide floating content when leaving any stage
             closeFloatingContent();
+
+            // For stage 1, also hide topic navigation immediately
+            if (currentStage === 1) {
+                const topicNav = document.getElementById('topicNav');
+                const subStageNav = document.getElementById('subStageNav');
+                if (topicNav) topicNav.classList.remove('show');
+                if (subStageNav) subStageNav.style.display = 'none';
+            }
 
             // Always advance to next stage
             if (currentStage < 8) {
                 currentStage++;
+                console.log(`📍 Advancing to stage ${currentStage}`);
+
                 if (typeof cinematicController !== 'undefined') {
                     cinematicController.setStage(currentStage);
                 }
                 updateInterface();
                 updateNavigationVisibility();
-                console.log(`📍 Going deeper to stage ${currentStage}`);
+                console.log(`📍 Going deeper to stage ${currentStage} - complete`);
             }
         }
 
@@ -1261,7 +1273,10 @@
                     // Stage 1: Show perspective navigation and topic content
                     if (subStageNav) subStageNav.style.display = 'block';
                     if (topicNav) topicNav.classList.add('show');
-                    showCurrentTopic();
+                    // Add delay to allow cinematic transition to complete before showing content
+                    setTimeout(() => {
+                        showCurrentTopic();
+                    }, 1500);
                 } else {
                     // Stages 2-8: Show stage-specific content cards
                     if (subStageNav) subStageNav.style.display = 'none';

@@ -6,6 +6,8 @@ interface PageProps {
     topic?: string
     qr?: string
     initiative?: string
+    returning?: string
+    action?: string
   }>
 }
 
@@ -19,6 +21,7 @@ export default async function PortalPage({ searchParams }: PageProps) {
         sourceTopic={params.topic}
         sourceQrCode={params.qr}
         sourceInitiative={params.initiative}
+        returning={params.returning}
       />
 
       {/* Portal Animation Container */}
