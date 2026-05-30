@@ -287,7 +287,7 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 15px;
+            gap: 12px;
             pointer-events: auto;
             z-index: 200;
         }
@@ -392,10 +392,17 @@
                 top: 10px;
             }
 
-            .deeper-btn, .signup-btn, .back-btn, .login-btn {
-                padding: 10px 16px;
+            .deeper-btn, .back-btn, .login-btn {
+                padding: 10px 12px;
                 font-size: 14px;
-                min-width: 80px;
+                min-width: 70px;
+            }
+
+            .signup-btn {
+                padding: 10px 8px;
+                font-size: 14px;
+                min-width: 75px;
+                white-space: nowrap;
             }
 
             .bottom-buttons {
