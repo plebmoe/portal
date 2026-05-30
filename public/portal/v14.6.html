@@ -423,18 +423,26 @@
             }
         }
 
-        /* STAGE TITLE */
+        /* STAGE TITLE CARD */
         .stage-title {
             position: fixed;
-            top: 60px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 200;
             text-align: center;
-            pointer-events: none;
+            pointer-events: auto;
             display: none;
             opacity: 0;
             transition: all 0.5s ease;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 140, 0, 0.4);
+            border-radius: 12px;
+            padding: 20px 24px;
+            max-width: 320px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            animation: cardSlideUp 0.6s ease forwards;
         }
 
         .stage-title.show {
@@ -444,33 +452,157 @@
 
         .stage-title h2 {
             color: #ff8c00;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(255, 140, 0, 0.6);
-            margin-bottom: 8px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
         }
 
         .stage-title p {
             color: #ffffff;
             font-size: 14px;
-            max-width: 280px;
             line-height: 1.4;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         @media (max-width: 768px) {
             .stage-title {
-                top: 50px;
+                top: 60px;
+                max-width: 280px;
+                padding: 16px 20px;
             }
             .stage-title h2 {
-                font-size: 20px;
-                letter-spacing: 2px;
+                font-size: 18px;
+                letter-spacing: 1.5px;
             }
             .stage-title p {
                 font-size: 13px;
-                max-width: 260px;
+            }
+        }
+
+        /* INFORMATION MODAL */
+        .info-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 300;
+            display: none;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .info-modal.show {
+            display: flex;
+            opacity: 1;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 140, 0, 0.6);
+            border-radius: 16px;
+            padding: 32px;
+            width: 75%;
+            max-width: 800px;
+            max-height: 75vh;
+            overflow-y: auto;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .info-modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ff8c00;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 140, 0, 0.2);
+            color: #fff;
+        }
+
+        .modal-header h3 {
+            color: #ff8c00;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-body {
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .modal-body p {
+            margin-bottom: 16px;
+        }
+
+        .modal-body h4 {
+            color: #ff8c00;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 24px 0 12px 0;
+        }
+
+        .modal-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff8c00, #ff6600);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 16px 0;
+            transition: all 0.3s ease;
+        }
+
+        .modal-link:hover {
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(255, 140, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 90%;
+                max-height: 80vh;
+                padding: 24px;
+            }
+
+            .modal-header h3 {
+                font-size: 20px;
+            }
+
+            .modal-body h4 {
+                font-size: 16px;
             }
         }
 
@@ -694,6 +826,19 @@
         <div id="debugPanel" class="debug-panel">
             <div id="debugInfo">Stage: APPROACH</div>
         </div>
+
+        <!-- Information Modal -->
+        <div id="infoModal" class="info-modal" onclick="handleModalBackdropClick(event)">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeInfoModal()">&times;</button>
+                <div class="modal-header">
+                    <h3 id="modalTitle"></h3>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Single Topic Card for Current Topic -->
@@ -772,10 +917,16 @@
             if (loginBtn) loginBtn.addEventListener('click', openLogin);
             if (signupBtn) signupBtn.addEventListener('click', openSignup);
 
-            // Debug toggle
+            // Debug toggle and modal keyboard support
             document.addEventListener('keydown', (e) => {
                 if (e.key.toLowerCase() === 'd') {
                     toggleDebug();
+                } else if (e.key === 'Escape') {
+                    // Close modal if open
+                    const modal = document.getElementById('infoModal');
+                    if (modal && modal.classList.contains('show')) {
+                        closeInfoModal();
+                    }
                 }
             });
         }
@@ -1120,7 +1271,7 @@
             // Generate compact cards HTML
             if (compactCards) {
                 compactCards.innerHTML = stageContent.cards.map((card, index) => `
-                    <div class="compact-card" style="animation-delay: ${index * 0.1}s" onclick="window.open('${card.link}', '_blank')">
+                    <div class="compact-card" style="animation-delay: ${index * 0.1}s" onclick="showCardInfo('${card.name}')">
                         <h4>${card.name}</h4>
                         <p>${card.desc}</p>
                     </div>
@@ -1250,6 +1401,153 @@
 
                 window.parent.location.href = signupUrl.toString();
             }
+        }
+
+        // Modal functions
+        function showInfoModal(title, content, link) {
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            if (modal && modalTitle && modalBody) {
+                modalTitle.textContent = title;
+                modalBody.innerHTML = content + (link ? `<br><br><a href="${link}" target="_blank" class="modal-link">Visit Website</a>` : '');
+
+                // Hide stage title and content cards
+                const stageTitle = document.getElementById('stageTitle');
+                const floatingContent = document.getElementById('floatingContent');
+                if (stageTitle) stageTitle.style.display = 'none';
+                if (floatingContent) floatingContent.style.display = 'none';
+
+                modal.classList.add('show');
+                console.log(`📖 Showing info modal: ${title}`);
+            }
+        }
+
+        function closeInfoModal() {
+            const modal = document.getElementById('infoModal');
+            if (modal) {
+                modal.classList.remove('show');
+
+                // Show stage title and content cards again
+                const stageTitle = document.getElementById('stageTitle');
+                const floatingContent = document.getElementById('floatingContent');
+                if (stageTitle) stageTitle.style.display = 'block';
+                if (floatingContent) floatingContent.style.display = 'block';
+
+                console.log('❌ Closed info modal');
+            }
+        }
+
+        function handleModalBackdropClick(event) {
+            // Close modal if clicked on backdrop (not modal content)
+            if (event.target === event.currentTarget) {
+                closeInfoModal();
+            }
+        }
+
+        function getCardInfo(cardName) {
+            // Define information for each card type
+            const cardData = {
+                'PlebMoe Platform': {
+                    content: `<h4>About PlebMoe Platform</h4>
+                             <p>PlebMoe is a decentralized platform that connects skilled individuals with Bitcoin-paying opportunities. Through our innovative "earn as you learn" model, users can develop valuable skills while building their Bitcoin stack.</p>
+                             <h4>Key Features</h4>
+                             <p>• Skill-based challenges and projects<br>
+                             • Bitcoin payments for completed work<br>
+                             • Educational resources and mentorship<br>
+                             • Community-driven quality assurance<br>
+                             • Progressive difficulty levels</p>
+                             <h4>Bitcoin Principles Applied</h4>
+                             <p>The platform demonstrates proof-of-work by requiring actual skill demonstration, not just credentials. Value exchange happens peer-to-peer without intermediary rent-seeking.</p>`,
+                    link: 'https://plebmoe.com'
+                },
+                'Premium Spas & Billiards': {
+                    content: `<h4>About Premium Spas & Billiards</h4>
+                             <p>PSAB specializes in therapeutic wellness infrastructure - premium spas, saunas, and billiards tables that serve as store-of-value assets while providing ongoing wellness benefits.</p>
+                             <h4>Our Philosophy</h4>
+                             <p>Quality therapeutic equipment holds value better than depreciating consumer goods. We help you invest in assets that improve your quality of life while preserving wealth.</p>
+                             <h4>Services</h4>
+                             <p>• Premium hot tubs and spas<br>
+                             • Traditional and infrared saunas<br>
+                             • Professional billiards tables<br>
+                             • Installation and maintenance<br>
+                             • Bitcoin payment options (3% discount)</p>
+                             <h4>Bitcoin Advantage</h4>
+                             <p>Pay with Bitcoin and receive a 3% discount on all purchases. Sound money for sound investments in your health and wellness.</p>`,
+                    link: 'https://premiumspasandbilliards.com'
+                },
+                'Solar Strive': {
+                    content: `<h4>About Solar Strive</h4>
+                             <p>Solar Strive focuses on energy sovereignty solutions that protect against inflation while providing independence from centralized energy systems.</p>
+                             <h4>Energy Independence Philosophy</h4>
+                             <p>Own your energy production means, just as Bitcoin ownership means owning your monetary sovereignty. Both protect against debasement and external control.</p>
+                             <h4>Services</h4>
+                             <p>• Residential solar system design<br>
+                             • Commercial energy solutions<br>
+                             • Battery storage systems<br>
+                             • Energy efficiency consulting<br>
+                             • Bitcoin mining integration</p>
+                             <h4>Bitcoin Integration</h4>
+                             <p>Our systems can be optimized for Bitcoin mining operations, turning excess solar capacity into sound money accumulation.</p>`,
+                    link: 'https://solarstrive.com'
+                },
+                'Penn Quarter Rules': {
+                    content: `<h4>About Penn Quarter Rules</h4>
+                             <p>Penn Quarter Rules applies Bitcoin's consensus mechanisms to human discourse, creating high-signal discussions resistant to capture and manipulation.</p>
+                             <h4>Proof-of-Work for Discussion</h4>
+                             <p>Our AI moderation technology ensures productive debate by requiring substantive contributions. Merit-based recognition replaces popularity contests.</p>
+                             <h4>Features</h4>
+                             <p>• AI-moderated discussions<br>
+                             • Merit-based ranking systems<br>
+                             • Tamper-proof conversation records<br>
+                             • Premium venue events<br>
+                             • Community-driven topics</p>
+                             <h4>Why It Matters</h4>
+                             <p>Quality discourse requires the same protection from spam and bad actors that Bitcoin provides for money. Our platform demonstrates these principles in action.</p>`,
+                    link: 'https://pennquarterrules.com'
+                },
+                'Better Boat Brokers': {
+                    content: `<h4>About Better Boat Brokers</h4>
+                             <p>Better Boat Brokers specializes in premium maritime assets with Bitcoin payment integration, focusing on quality boats as appreciating investments.</p>
+                             <h4>Sound Money for Sound Vessels</h4>
+                             <p>Quality boats, like Bitcoin, can appreciate over time when purchased and maintained properly. We help you acquire maritime assets with low time preference thinking.</p>
+                             <h4>Services</h4>
+                             <p>• Premium yacht and sailboat sales<br>
+                             • Investment-grade vessel evaluation<br>
+                             • International transaction support<br>
+                             • Bitcoin payment processing<br>
+                             • Maritime asset consulting</p>
+                             <h4>Global Reach</h4>
+                             <p>Bitcoin enables international transactions without traditional banking delays or fees. Purchase your dream vessel from anywhere in the world.</p>`,
+                    link: 'https://betterboatbrokers.com'
+                },
+                'Financial Advisor': {
+                    content: `<h4>Bitcoin-Focused Financial Advisory</h4>
+                             <p>Our financial advisory services specialize in Bitcoin allocation strategies, self-custody education, and portfolio optimization for the digital age.</p>
+                             <h4>Services</h4>
+                             <p>• Bitcoin allocation consulting<br>
+                             • Self-custody setup and education<br>
+                             • Portfolio rebalancing strategies<br>
+                             • Estate planning with Bitcoin<br>
+                             • Tax optimization guidance</p>
+                             <h4>Philosophy</h4>
+                             <p>Traditional financial advice assumes fiat currency stability. Our approach acknowledges Bitcoin's superior monetary properties and helps you navigate the transition.</p>
+                             <h4>Education Focus</h4>
+                             <p>We believe in empowering clients with knowledge rather than creating dependency. Our goal is to help you understand and manage your own financial sovereignty.</p>`,
+                    link: '#bitcoin-financial-advisor'
+                }
+            };
+
+            return cardData[cardName] || {
+                content: `<p>Information about ${cardName} coming soon...</p>`,
+                link: null
+            };
+        }
+
+        function showCardInfo(cardName) {
+            const cardInfo = getCardInfo(cardName);
+            showInfoModal(cardName, cardInfo.content, cardInfo.link);
         }
 
         function updateInterface() {
