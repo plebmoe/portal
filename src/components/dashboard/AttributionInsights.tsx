@@ -1,5 +1,8 @@
 'use client'
 
+import { useState } from 'react'
+import InitiativeModal from '@/components/InitiativeModal'
+
 interface Activity {
   id: string
   activity_type: string
@@ -84,6 +87,8 @@ const initiativeData = {
 }
 
 export default function AttributionInsights({ activities }: AttributionInsightsProps) {
+  const [selectedModal, setSelectedModal] = useState<string | null>(null)
+
   // Find the primary attribution source
   const attributionActivity = activities.find(a => a.source_qr_code && a.source_initiative)
   const primarySource = attributionActivity?.source_qr_code
@@ -117,7 +122,8 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
         title: 'Continue Your Journey',
         description: `Explore Stage ${primaryInfo.stage} to dive deeper into ${primaryInfo.focus}`,
         action: 'Visit Portal',
-        actionUrl: `/portal?stage=${primaryInfo.stage}`,
+        actionType: 'portal' as const,
+        actionUrl: `/?stage=${primaryInfo.stage}`,
         color: primaryInfo.color
       }
     ]
@@ -130,7 +136,8 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
         title: `Explore ${data.name}`,
         description: `Discover how ${data.focus.toLowerCase()} connects to your interests`,
         action: 'Learn More',
-        actionUrl: `/portal?qr=${key}&stage=${data.stage}`,
+        actionType: 'modal' as const,
+        actionUrl: key,
         color: data.color
       }))
 
@@ -149,8 +156,16 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
           <div className={`bg-gradient-to-r ${primaryInfo.color} rounded-lg p-4`}>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">{primaryInfo.icon}</span>
-              <div>
-                <h3 className="font-semibold text-white">{primaryInfo.name}</h3>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-white">{primaryInfo.name}</h3>
+                  <button
+                    onClick={() => setSelectedModal(primarySource || '')}
+                    className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-full transition-colors"
+                  >
+                    Learn More
+                  </button>
+                </div>
                 <p className="text-white/80 text-sm">{primaryInfo.description}</p>
               </div>
             </div>
@@ -204,7 +219,13 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
                   <div className="flex justify-between items-start mb-2">
                     <h5 className="font-medium text-white text-sm">{content.title}</h5>
                     <button
-                      onClick={() => window.open(content.actionUrl, '_self')}
+                      onClick={() => {
+                        if (content.actionType === 'modal') {
+                          setSelectedModal(content.actionUrl)
+                        } else {
+                          window.open(content.actionUrl, '_self')
+                        }
+                      }}
                       className={`text-xs bg-gradient-to-r ${content.color} text-white px-2 py-1 rounded
                                  hover:opacity-90 transition-opacity`}
                     >
@@ -250,7 +271,7 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
             You entered the portal directly. Explore with QR codes to unlock personalized insights.
           </p>
           <button
-            onClick={() => window.open('/portal', '_self')}
+            onClick={() => window.open('/', '_self')}
             className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700
                        text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
           >
@@ -258,6 +279,12 @@ export default function AttributionInsights({ activities }: AttributionInsightsP
           </button>
         </div>
       )}
+
+      {/* Initiative Modal */}
+      <InitiativeModal
+        initiativeId={selectedModal}
+        onClose={() => setSelectedModal(null)}
+      />
     </div>
   )
 }

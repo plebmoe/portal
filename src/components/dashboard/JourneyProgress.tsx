@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import InitiativeModal from '@/components/InitiativeModal'
 
 interface Activity {
   id: string
@@ -102,8 +103,18 @@ const stageData = [
   }
 ]
 
+// Map stages to business initiatives
+const stageToInitiative = {
+  4: 'pop',    // AI stage -> Proof of Putt
+  5: 'psab',   // Lifestyle stage -> Premium Spas & Billiards
+  6: 'solar',  // Energy stage -> Solar Strive
+  7: 'boats',  // Wealth stage -> Better Boat Brokers
+  8: 'pqr'     // Community stage -> Penn Quarter Rules
+}
+
 export default function JourneyProgress({ activities, user }: JourneyProgressProps) {
   const [selectedStage, setSelectedStage] = useState<number | null>(null)
+  const [selectedModal, setSelectedModal] = useState<string | null>(null)
 
   // Calculate visited stages from activities
   const visitedStages = new Set(
@@ -246,6 +257,24 @@ export default function JourneyProgress({ activities, user }: JourneyProgressPro
                         </span>
                       </div>
                     )}
+
+                    {/* Business Initiative Connection */}
+                    {stage.id in stageToInitiative && (
+                      <div className="mt-3 pt-3 border-t border-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 text-xs">Related Initiative:</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedModal(stageToInitiative[stage.id as keyof typeof stageToInitiative])
+                            }}
+                            className="text-orange-400 hover:text-orange-300 text-xs underline transition-colors"
+                          >
+                            Learn More
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -286,6 +315,12 @@ export default function JourneyProgress({ activities, user }: JourneyProgressPro
           </div>
         </div>
       </div>
+
+      {/* Initiative Modal */}
+      <InitiativeModal
+        initiativeId={selectedModal}
+        onClose={() => setSelectedModal(null)}
+      />
     </div>
   )
 }

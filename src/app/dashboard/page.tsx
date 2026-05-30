@@ -23,7 +23,7 @@ export default function DashboardPage() {
       const token = localStorage.getItem('user_session')
 
       if (!token) {
-        router.push('/portal?action=login')
+        router.push('/?action=login')
         return
       }
 
@@ -40,11 +40,11 @@ export default function DashboardPage() {
         } else {
           localStorage.removeItem('user_session')
           localStorage.removeItem('user_data')
-          router.push('/portal?action=login')
+          router.push('/?action=login')
         }
       } catch (error) {
         console.error('Auth check failed:', error)
-        router.push('/portal?action=login')
+        router.push('/?action=login')
       } finally {
         setLoading(false)
       }

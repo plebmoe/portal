@@ -63,12 +63,12 @@ export default function DashboardContent({ user }: DashboardContentProps) {
   const handleLogout = () => {
     localStorage.removeItem('user_session')
     localStorage.removeItem('user_data')
-    router.push('/portal')
+    router.push('/')
   }
 
   const handleReturnToPortal = () => {
     // Preserve user state and return to portal
-    router.push('/portal?returning=true')
+    router.push('/?returning=true')
   }
 
   const getJourneyStats = () => {

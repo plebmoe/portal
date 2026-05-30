@@ -10,7 +10,7 @@ const qrCodes = [
     stage: 5,
     focus: 'wealth-wellness',
     tagline: 'Quality assets for health & wealth',
-    url: 'https://seendem.com/portal?qr=psab&focus=wealth-wellness&stage=5'
+    url: 'https://seendem.com?qr=psab&focus=wealth-wellness&stage=5'
   },
   {
     name: 'Penn Quarter Rules',
@@ -18,7 +18,7 @@ const qrCodes = [
     stage: 8,
     focus: 'community-ai',
     tagline: 'Proof-of-work applied to discourse',
-    url: 'https://seendem.com/portal?qr=pqr&focus=community-ai&stage=8'
+    url: 'https://seendem.com?qr=pqr&focus=community-ai&stage=8'
   },
   {
     name: 'Solar Strive',
@@ -26,7 +26,7 @@ const qrCodes = [
     stage: 6,
     focus: 'energy-sovereignty',
     tagline: 'Energy independence = monetary independence',
-    url: 'https://seendem.com/portal?qr=solar&focus=energy-sovereignty&stage=6'
+    url: 'https://seendem.com?qr=solar&focus=energy-sovereignty&stage=6'
   },
   {
     name: 'Proof of Putt',
@@ -34,7 +34,7 @@ const qrCodes = [
     stage: 4,
     focus: 'ai-gamification',
     tagline: 'Merit-based recognition systems',
-    url: 'https://seendem.com/portal?qr=pop&focus=ai-gamification&stage=4'
+    url: 'https://seendem.com?qr=pop&focus=ai-gamification&stage=4'
   },
   {
     name: 'Better Boat Brokers',
@@ -42,7 +42,7 @@ const qrCodes = [
     stage: 7,
     focus: 'bitcoin-assets',
     tagline: 'Sound money for premium assets',
-    url: 'https://seendem.com/portal?qr=boats&focus=bitcoin-assets&stage=7'
+    url: 'https://seendem.com?qr=boats&focus=bitcoin-assets&stage=7'
   }
 ];
 
